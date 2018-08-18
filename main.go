@@ -12,8 +12,9 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"gopkg.in/mgo.v2"
+		"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"github.com/joostvdg/go_demo_lib"
 )
 
 var coll *mgo.Collection
@@ -44,6 +45,7 @@ func main() {
 	if len(os.Getenv("SERVICE_NAME")) > 0 {
 		serviceName = os.Getenv("SERVICE_NAME")
 	}
+
 	setupDb()
 	RunServer()
 }
@@ -83,13 +85,21 @@ func HelloServer(w http.ResponseWriter, req *http.Request) {
 	start := time.Now()
 	defer func() { recordMetrics(start, req, http.StatusOK) }()
 
+	toGreet := "world"
+	keys, ok := req.URL.Query()["name"]
+	if ok && len(keys[0]) >= 1 {
+		toGreet = keys[0]
+	}
+
 	logPrintf("%s request to %s\n", req.Method, req.RequestURI)
 	delay := req.URL.Query().Get("delay")
 	if len(delay) > 0 {
 		delayNum, _ := strconv.Atoi(delay)
 		sleep(time.Duration(delayNum) * time.Millisecond)
 	}
-	io.WriteString(w, "hello, world!\n")
+	helloGreeting := go_demo_lib.Hello(toGreet)
+	output := fmt.Sprintf("%s\n", helloGreeting)
+	io.WriteString(w, output)
 }
 
 func RandomErrorServer(w http.ResponseWriter, req *http.Request) {
